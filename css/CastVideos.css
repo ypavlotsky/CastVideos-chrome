@@ -25,7 +25,7 @@ body {
 #top_header {
   float:left;
   width: 100%;
-  height: 142px;
+  height: 71px;
   background-image:url('../imagefiles/header_bg.png');
   background-repeat:repeat-x;
   margin: 0px;
@@ -67,8 +67,8 @@ body {
 
 #logo {
   float:left;
-  width: 402px;
-  height: 142px;
+  width: 201px;
+  height: 71px;
   background-image:url('../imagefiles/logo.png');
   margin: 10px 25px 0px 25px;
 }
@@ -173,7 +173,7 @@ body {
 #media_control {
   position: absolute;
   left: 8px;
-  top: 720px;
+  top: 650px;
   width:960px;
   height:60px;
   z-index:1000;

@@ -122,7 +122,12 @@ CastPlayer.prototype.initializeCastPlayer = function() {
     setTimeout(this.initializeCastPlayer.bind(this), 1000);
     return;
   }
-  var sessionRequest = new chrome.cast.SessionRequest(chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID);
+  // default set to the default media receiver app ID
+  // optional: you may change it to point to your own
+  var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+
+  // request session
+  var sessionRequest = new chrome.cast.SessionRequest(applicationID);
   var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
     this.sessionListener.bind(this),
     this.receiverListener.bind(this));

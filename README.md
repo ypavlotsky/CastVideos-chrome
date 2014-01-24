@@ -14,8 +14,7 @@ This Google Cast demo app shows how to cast videos from a Chrome browser using C
  
 # Steps:
  1. Put all files on your own server
- 2. Change YOUR_APP_ID to your own in CastVideos.js
- 3. Make sure that your receiver app has a DIV with ID set to 'player'
+ 2. Change YOUR_APP_ID to your own in CastVideos.js (optional if you don't change default app ID)
  4. Open a browser and point to your page at http://[YOUR_SERVER_LOCATION]/CastVideos.html
 
 ##Documentation
