@@ -57,14 +57,20 @@ var PLAYER_STATE = {
 
 /**
  * Cast player object
+ * main variables:
+ *  - deviceState for Cast mode: 
+ *    IDLE: Default state indicating that Cast extension is installed, but showing no current activity
+ *    ACTIVE: Shown when Chrome has one or more local activities running on a receiver
+ *    WARNING: Shown when the device is actively being used, but when one or more issues have occurred
+ *    ERROR: Should not normally occur, but shown when there is a failure 
+ *  - Cast player variables for controlling Cast mode media playback 
+ *  - Local player variables for controlling local mode media playbacks
+ *  - Current media variables for transition between Cast and local modes
  */
 var CastPlayer = function() {
   /* device variables */
   // @type {DEVICE_STATE} A state for device
   this.deviceState = DEVICE_STATE.IDLE;
-
-  /* media contents from JSON */
-  this.mediaContents = null;
 
   /* Cast player variables */
   // @type {Object} a chrome.cast.media.Media object
@@ -86,7 +92,7 @@ var CastPlayer = function() {
   // @type {Boolean} Fullscreen mode on/off
   this.fullscreen = false;
 
-  /* media variables */
+  /* Current media variables */
   // @type {Boolean} Audio on and off
   this.audio = true;
   // @type {Number} A number for current media index
@@ -102,6 +108,9 @@ var CastPlayer = function() {
   // @type {Number} A number in milliseconds for minimal progress update
   this.timerStep = 1000;
 
+  /* media contents from JSON */
+  this.mediaContents = null;
+
   this.initializeCastPlayer();
   this.initializeLocalPlayer();
 };
@@ -115,6 +124,9 @@ CastPlayer.prototype.initializeLocalPlayer = function() {
 
 /**
  * Initialize Cast media player 
+ * Initializes the API. Note that either successCallback and errorCallback will be
+ * invoked once the API has finished initialization. The sessionListener and 
+ * receiverListener may be invoked at any time afterwards, and possibly more than once. 
  */
 CastPlayer.prototype.initializeCastPlayer = function() {
 
@@ -134,7 +146,6 @@ CastPlayer.prototype.initializeCastPlayer = function() {
 
   chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
 
-  //this.retrieveMediaJSON(MEDIA_SOURCE_URL);
   this.addVideoThumbs();
   this.initializeUI();
 };
@@ -151,29 +162,15 @@ CastPlayer.prototype.onInitSuccess = function() {
  * Generic error callback function 
  */
 CastPlayer.prototype.onError = function() {
-//  console.log("error");
-};
-
-/**
- * Callback function for stop app success 
- */
-CastPlayer.prototype.onStopAppSuccess = function(message) {
-  console.log(message);
-  this.deviceState = DEVICE_STATE.IDLE;
-  this.castPlayerState = PLAYER_STATE.IDLE;
-  this.currentMediaSession = null;
-  clearInterval(this.timer);
-  this.updateDisplayMessage();
-
-  // continue to play media locally
-  console.log("current time: " + this.currentMediaTime);
-  this.playMediaLocally(this.currentMediaTime);
-  this.updateMediaControlUI();
+  console.log("error");
 };
 
 /**
  * @param {!Object} e A new session
- * @private
+ * This handles auto-join when a page is reloaded
+ * When active session is detected, playback will automatically
+ * join existing session and occur in Cast mode and media
+ * status gets synced up with current media of the session 
  */
 CastPlayer.prototype.sessionListener = function(e) {
   this.session = e;
@@ -190,7 +187,8 @@ CastPlayer.prototype.sessionListener = function(e) {
 
 /**
  * @param {string} e Receiver availability
- * @private
+ * This indicates availability of receivers but
+ * does not provide a list of device IDs
  */
 CastPlayer.prototype.receiverListener = function(e) {
   if( e === 'available' ) {
@@ -203,12 +201,12 @@ CastPlayer.prototype.receiverListener = function(e) {
 
 /**
  * Select a media content
- * @param {Number} m A number for media index 
+ * @param {Number} mediaIndex A number for media index 
  */
-CastPlayer.prototype.selectMedia = function(m) {
-  console.log("media selected" + m);
+CastPlayer.prototype.selectMedia = function(mediaIndex) {
+  console.log("media selected" + mediaIndex);
 
-  this.currentMediaIndex = m;
+  this.currentMediaIndex = mediaIndex;
   // reset progress bar
   var pi = document.getElementById("progress_indicator"); 
   var p = document.getElementById("progress"); 
@@ -229,11 +227,13 @@ CastPlayer.prototype.selectMedia = function(m) {
     this.castPlayerState = PLAYER_STATE.IDLE; 
     this.playMedia(); 
   }
-  this.selectMediaUpdateUI(m);
+  this.selectMediaUpdateUI(mediaIndex);
 };
 
 /**
- * Launch app by requesting session 
+ * Requests that a receiver application session be created or joined. By default, the SessionRequest
+ * passed to the API at initialization time is used; this may be overridden by passing a different
+ * session request in opt_sessionRequest. 
  */
 CastPlayer.prototype.launchApp = function() {
   console.log("launching app...");
@@ -245,7 +245,7 @@ CastPlayer.prototype.launchApp = function() {
 
 /**
  * Callback function for request session success 
- * @param {Object} e A session object
+ * @param {Object} e A chrome.cast.Session object
  */
 CastPlayer.prototype.onRequestSessionSuccess = function(e) {
   console.log("session success: " + e.sessionId);
@@ -256,7 +256,7 @@ CastPlayer.prototype.onRequestSessionSuccess = function(e) {
 };
 
 /**
- * 
+ * Callback function for launch error
  */
 CastPlayer.prototype.onLaunchError = function() {
   console.log("launch error");
@@ -264,7 +264,7 @@ CastPlayer.prototype.onLaunchError = function() {
 };
 
 /**
- * 
+ * Stops the running receiver application associated with the session.
  */
 CastPlayer.prototype.stopApp = function() {
   this.session.stop(this.onStopAppSuccess.bind(this, 'Session stopped'),
@@ -273,16 +273,33 @@ CastPlayer.prototype.stopApp = function() {
 };
 
 /**
- * Load media content 
- * @param {Number} i An index number to indicate current media content
+ * Callback function for stop app success 
  */
-CastPlayer.prototype.loadMedia = function(i) {
+CastPlayer.prototype.onStopAppSuccess = function(message) {
+  console.log(message);
+  this.deviceState = DEVICE_STATE.IDLE;
+  this.castPlayerState = PLAYER_STATE.IDLE;
+  this.currentMediaSession = null;
+  clearInterval(this.timer);
+  this.updateDisplayMessage();
+
+  // continue to play media locally
+  console.log("current time: " + this.currentMediaTime);
+  this.playMediaLocally(this.currentMediaTime);
+  this.updateMediaControlUI();
+};
+
+/**
+ * Loads media into a running receiver application
+ * @param {Number} mediaIndex An index number to indicate current media content
+ */
+CastPlayer.prototype.loadMedia = function(mediaIndex) {
   if (!this.session) {
     console.log("no session");
     return;
   }
-  console.log("loading..." + this.mediaContents[i]['title']);
-  var mediaInfo = new chrome.cast.media.MediaInfo(this.mediaContents[i]['sources'][0]);
+  console.log("loading..." + this.mediaContents[mediaIndex]['title']);
+  var mediaInfo = new chrome.cast.media.MediaInfo(this.mediaContents[mediaIndex]['sources'][0]);
   mediaInfo.contentType = 'video/mp4';
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
   request.autoplay = this.autoplay;
@@ -315,7 +332,8 @@ CastPlayer.prototype.loadMedia = function(i) {
 };
 
 /**
- * @param {!Object} e A new media object.
+ * Callback function for loadMedia success
+ * @param {Object} mediaSession A new media object.
  */
 CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
   console.log("new media session ID:" + mediaSession.mediaSessionId + ' (' + how + ')');
@@ -374,22 +392,6 @@ CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
 };
 
 /**
- * Increment media current position by 1 second 
- */
-CastPlayer.prototype.incrementMediaTime = function() {
-  if( this.castPlayerState == PLAYER_STATE.PLAYING || this.localPlayerState == PLAYER_STATE.PLAYING ) {
-    if( this.currentMediaTime < this.currentMediaDuration ) {
-      this.currentMediaTime += 1;
-      this.updateProgressBarByTimer();
-    }
-    else {
-      this.currentMediaTime = 0;
-      clearInterval(this.timer);
-    }
-  }
-};
-
-/**
  * Callback function when media load returns error 
  */
 CastPlayer.prototype.onLoadMediaError = function(e) {
@@ -413,6 +415,23 @@ CastPlayer.prototype.onMediaStatusUpdate = function(e) {
   this.updateProgressBar(e);
   this.updateDisplayMessage();
   this.updateMediaControlUI();
+};
+
+/**
+ * Helper function
+ * Increment media current position by 1 second 
+ */
+CastPlayer.prototype.incrementMediaTime = function() {
+  if( this.castPlayerState == PLAYER_STATE.PLAYING || this.localPlayerState == PLAYER_STATE.PLAYING ) {
+    if( this.currentMediaTime < this.currentMediaDuration ) {
+      this.currentMediaTime += 1;
+      this.updateProgressBarByTimer();
+    }
+    else {
+      this.currentMediaTime = 0;
+      clearInterval(this.timer);
+    }
+  }
 };
 
 /**
@@ -468,7 +487,7 @@ CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
 };
 
 /**
- * Play media 
+ * Play media in Cast mode 
  */
 CastPlayer.prototype.playMedia = function() {
   if( !this.currentMediaSession ) {
@@ -503,7 +522,7 @@ CastPlayer.prototype.playMedia = function() {
 };
 
 /**
- * Pause media playback  
+ * Pause media playback in Cast mode  
  */
 CastPlayer.prototype.pauseMedia = function() {
   if( !this.currentMediaSession ) {
@@ -533,7 +552,7 @@ CastPlayer.prototype.pauseMediaLocally = function() {
 };
 
 /**
- * Stop meia playback  
+ * Stop meia playback in either Cast or local mode  
  */
 CastPlayer.prototype.stopMedia = function() {
   if( !this.currentMediaSession ) {
@@ -564,7 +583,7 @@ CastPlayer.prototype.stopMediaLocally = function() {
 };
 
 /**
- * Set media volume
+ * Set media volume in Cast mode
  * @param {Boolean} mute A boolean  
  */
 CastPlayer.prototype.setMediaVolume = function(mute) {
@@ -610,7 +629,7 @@ CastPlayer.prototype.setMediaVolume = function(mute) {
 };
 
 /**
- * Mute media function 
+ * Mute media function in either Cast or local mode 
  */
 CastPlayer.prototype.muteMedia = function() {
   if( this.audio == true ) {
@@ -640,7 +659,7 @@ CastPlayer.prototype.muteMedia = function() {
 
 
 /**
- * media seek function
+ * media seek function in either Cast or local mode
  * @param {Event} e An event object from seek 
  */
 CastPlayer.prototype.seekMedia = function(event) {
@@ -822,14 +841,14 @@ CastPlayer.prototype.updateMediaControlUI = function() {
 
 /**
  * Update UI components after selectMedia call 
- * @param {Number} i An number
+ * @param {Number} mediaIndex An number
  */
-CastPlayer.prototype.selectMediaUpdateUI = function(i) {
-  document.getElementById('video_image').src = MEDIA_SOURCE_ROOT + this.mediaContents[i]['thumb'];
+CastPlayer.prototype.selectMediaUpdateUI = function(mediaIndex) {
+  document.getElementById('video_image').src = MEDIA_SOURCE_ROOT + this.mediaContents[mediaIndex]['thumb'];
   document.getElementById("progress").style.width = '0px';
-  document.getElementById("media_title").innerHTML = this.mediaContents[i]['title'];
-  document.getElementById("media_subtitle").innerHTML = this.mediaContents[i]['subtitle'];
-  document.getElementById("media_desc").innerHTML = this.mediaContents[i]['description'];
+  document.getElementById("media_title").innerHTML = this.mediaContents[mediaIndex]['title'];
+  document.getElementById("media_subtitle").innerHTML = this.mediaContents[mediaIndex]['subtitle'];
+  document.getElementById("media_desc").innerHTML = this.mediaContents[mediaIndex]['description'];
 };
 
 /**

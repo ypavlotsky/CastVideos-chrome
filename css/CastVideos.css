@@ -57,6 +57,10 @@ body {
   color: #fff;
 }
 
+#footer_content_link {
+  color: #fff;
+}
+
 #footer_language {
   float:right;
   width: 200px;
