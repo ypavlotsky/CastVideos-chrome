@@ -32,7 +32,7 @@ var MEDIA_SOURCE_URL = 'http://commondatastorage.googleapis.com/gtv-videos-bucke
 var PROGRESS_BAR_WIDTH = 600;
 
 /**
- * Constatns of states for Chromecast device 
+ * Constants of states for Chromecast device 
  **/
 var DEVICE_STATE = {
   'IDLE' : 0, 
@@ -586,7 +586,7 @@ CastPlayer.prototype.stopMediaLocally = function() {
  * Set media volume in Cast mode
  * @param {Boolean} mute A boolean  
  */
-CastPlayer.prototype.setMediaVolume = function(mute) {
+CastPlayer.prototype.setReceiverVolume = function(mute) {
   var p = document.getElementById("audio_bg_level"); 
   if( event.currentTarget.id == 'audio_bg_track' ) {
     var pos = 100 - parseInt(event.offsetY);
@@ -617,14 +617,16 @@ CastPlayer.prototype.setMediaVolume = function(mute) {
     }
   }
 
-  var volume = new chrome.cast.Volume();
-  volume.level = this.currentVolume;
-  volume.muted = mute;
-  var request = new chrome.cast.media.VolumeRequest();
-  request.volume = volume;
-  this.currentMediaSession.setVolume(request,
-    this.mediaCommandSuccessCallback.bind(this),
-    this.onError.bind(this));
+  if( !mute ) {
+    this.session.setReceiverVolumeLevel(this.currentVolume,
+      this.mediaCommandSuccessCallback.bind(this),
+      this.onError.bind(this));
+  }
+  else {
+    this.session.setReceiverMuted(true,
+      this.mediaCommandSuccessCallback.bind(this),
+      this.onError.bind(this));
+  }
   this.updateMediaControlUI();
 };
 
@@ -637,7 +639,7 @@ CastPlayer.prototype.muteMedia = function() {
     document.getElementById('audio_on').style.display = 'none';
     document.getElementById('audio_off').style.display = 'block';
     if( this.currentMediaSession ) {
-      this.setMediaVolume(true);
+      this.setReceiverVolume(true);
     }
     else {
       this.localPlayer.muted = true;
@@ -648,7 +650,7 @@ CastPlayer.prototype.muteMedia = function() {
     document.getElementById('audio_on').style.display = 'block';
     document.getElementById('audio_off').style.display = 'none';
     if( this.currentMediaSession ) {
-      this.setMediaVolume(false);
+      this.setReceiverVolume(false);
     }
     else {
       this.localPlayer.muted = false;
@@ -872,8 +874,8 @@ CastPlayer.prototype.initializeUI = function() {
   document.getElementById("audio_on").addEventListener('mouseover', this.showVolumeSlider.bind(this));
   document.getElementById("audio_bg_level").addEventListener('mouseover', this.showVolumeSlider.bind(this));
   document.getElementById("audio_bg_track").addEventListener('mouseover', this.showVolumeSlider.bind(this));
-  document.getElementById("audio_bg_level").addEventListener('click', this.setMediaVolume.bind(this, false));
-  document.getElementById("audio_bg_track").addEventListener('click', this.setMediaVolume.bind(this, false));
+  document.getElementById("audio_bg_level").addEventListener('click', this.setReceiverVolume.bind(this, false));
+  document.getElementById("audio_bg_track").addEventListener('click', this.setReceiverVolume.bind(this, false));
   document.getElementById("audio_bg").addEventListener('mouseout', this.hideVolumeSlider.bind(this));
   document.getElementById("audio_on").addEventListener('mouseout', this.hideVolumeSlider.bind(this));
   document.getElementById("media_control").addEventListener('mouseover', this.showMediaControl.bind(this));
