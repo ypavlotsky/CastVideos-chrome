@@ -42,7 +42,7 @@ var DEVICE_STATE = {
 };
 
 /**
- * Constatns of states for CastPlayer 
+ * Constants of states for CastPlayer 
  **/
 var PLAYER_STATE = {
   'IDLE' : 'IDLE', 
