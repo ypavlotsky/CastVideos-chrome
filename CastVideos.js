@@ -182,6 +182,7 @@ CastPlayer.prototype.sessionListener = function(e) {
     else {
       this.loadMedia(this.currentMediaIndex);
     }
+    this.session.addUpdateListener(this.sessionUpdateListener.bind(this));
   }
 }
 
@@ -198,6 +199,26 @@ CastPlayer.prototype.receiverListener = function(e) {
     console.log("receiver list empty");
   }
 };
+
+/**
+ * session update listener
+ */
+CastPlayer.prototype.sessionUpdateListener = function(isAlive) {
+  if (!isAlive) {
+    this.session = null;
+    this.deviceState = DEVICE_STATE.IDLE;
+    this.castPlayerState = PLAYER_STATE.IDLE;
+    this.currentMediaSession = null;
+    clearInterval(this.timer);
+    this.updateDisplayMessage();
+
+    // continue to play media locally
+    console.log("current time: " + this.currentMediaTime);
+    this.playMediaLocally(this.currentMediaTime);
+    this.updateMediaControlUI();
+  }
+};
+
 
 /**
  * Select a media content
@@ -253,6 +274,7 @@ CastPlayer.prototype.onRequestSessionSuccess = function(e) {
   this.deviceState = DEVICE_STATE.ACTIVE;
   this.updateMediaControlUI();
   this.loadMedia(this.currentMediaIndex);
+  this.session.addUpdateListener(this.sessionUpdateListener.bind(this));
 };
 
 /**
@@ -802,9 +824,9 @@ CastPlayer.prototype.updateDisplayMessage = function() {
     document.getElementById("playerstatebg").style.display = 'block';
     document.getElementById("video_image_overlay").style.display = 'block';
     //document.getElementById("media_control").style.opacity = 0.5;
+    document.getElementById("playerstate").innerHTML = this.castPlayerState
+      + " on " + this.session.receiver.friendlyName;
   }
-  document.getElementById("playerstate").innerHTML = this.castPlayerState
-    + " on " + this.session.receiver.friendlyName;
 }
 
 /**
