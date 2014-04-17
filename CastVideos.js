@@ -111,6 +111,10 @@ var CastPlayer = function() {
   /* media contents from JSON */
   this.mediaContents = null;
 
+  this.errorHandler = this.onError.bind(this);
+  this.incrementMediaTimeHandler = this.incrementMediaTime.bind(this);
+  this.mediaStatusUpdateHandler = this.onMediaStatusUpdate.bind(this);
+
   this.initializeCastPlayer();
   this.initializeLocalPlayer();
 };
@@ -144,7 +148,7 @@ CastPlayer.prototype.initializeCastPlayer = function() {
     this.sessionListener.bind(this),
     this.receiverListener.bind(this));
 
-  chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
+  chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.errorHandler);
 
   this.addVideoThumbs();
   this.initializeUI();
@@ -290,8 +294,7 @@ CastPlayer.prototype.onLaunchError = function() {
  */
 CastPlayer.prototype.stopApp = function() {
   this.session.stop(this.onStopAppSuccess.bind(this, 'Session stopped'),
-      this.onError.bind(this));    
-
+      this.errorHandler);
 };
 
 /**
@@ -375,11 +378,10 @@ CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
   }
 
   if( this.castPlayerState == PLAYER_STATE.PLAYING ) {
-    // start progress timer
-    this.startProgressTimer(this.incrementMediaTime);
+    this.startProgressTimer();
   }
 
-  this.currentMediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+  this.currentMediaSession.addUpdateListener(this.mediaStatusUpdateHandler);
 
   this.currentMediaDuration = this.currentMediaSession.media.duration;
   var duration = this.currentMediaDuration;
@@ -405,8 +407,7 @@ CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
     var vi = document.getElementById('video_image')
     vi.style.display = 'block';
     this.localPlayer.style.display = 'none';
-    // start progress timer
-    this.startProgressTimer(this.incrementMediaTime);
+    this.startProgressTimer();
   }
   // update UIs
   this.updateMediaControlUI();
@@ -471,8 +472,7 @@ CastPlayer.prototype.playMediaLocally = function(currentTime) {
   }
   else {
     this.localPlayer.play();
-    // start progress timer
-    this.startProgressTimer(this.incrementMediaTime);
+    this.startProgressTimer();
   }
   this.localPlayerState = PLAYER_STATE.PLAYING;
   this.updateMediaControlUI();
@@ -505,7 +505,7 @@ CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
   this.localPlayer.currentTime= currentTime;
   this.localPlayer.play();
   // start progress timer
-  this.startProgressTimer(this.incrementMediaTime);
+  this.startProgressTimer();
 };
 
 /**
@@ -523,17 +523,17 @@ CastPlayer.prototype.playMedia = function() {
     case PLAYER_STATE.PAUSED:
       this.currentMediaSession.play(null, 
         this.mediaCommandSuccessCallback.bind(this,"playing started for " + this.currentMediaSession.sessionId),
-        this.onError.bind(this));
-      this.currentMediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+        this.errorHandler);
+      this.currentMediaSession.addUpdateListener(this.mediaStatusUpdateHandler);
       this.castPlayerState = PLAYER_STATE.PLAYING;
       // start progress timer
-      this.startProgressTimer(this.incrementMediaTime);
+      this.startProgressTimer();
       break;
     case PLAYER_STATE.IDLE:
     case PLAYER_STATE.LOADING:
     case PLAYER_STATE.STOPPED:
       this.loadMedia(this.currentMediaIndex);
-      this.currentMediaSession.addUpdateListener(this.onMediaStatusUpdate.bind(this));
+      this.currentMediaSession.addUpdateListener(this.mediaStatusUpdateHandler);
       this.castPlayerState = PLAYER_STATE.PLAYING;
       break;
     default:
@@ -556,7 +556,7 @@ CastPlayer.prototype.pauseMedia = function() {
     this.castPlayerState = PLAYER_STATE.PAUSED;
     this.currentMediaSession.pause(null,
       this.mediaCommandSuccessCallback.bind(this,"paused " + this.currentMediaSession.sessionId),
-      this.onError.bind(this));
+      this.errorHandler);
     this.updateMediaControlUI();
     this.updateDisplayMessage();
     clearInterval(this.timer);
@@ -584,7 +584,7 @@ CastPlayer.prototype.stopMedia = function() {
 
   this.currentMediaSession.stop(null,
     this.mediaCommandSuccessCallback.bind(this,"stopped " + this.currentMediaSession.sessionId),
-    this.onError.bind(this));
+    this.errorHandler);
   this.castPlayerState = PLAYER_STATE.STOPPED;
   clearInterval(this.timer);
 
@@ -642,12 +642,12 @@ CastPlayer.prototype.setReceiverVolume = function(mute) {
   if( !mute ) {
     this.session.setReceiverVolumeLevel(this.currentVolume,
       this.mediaCommandSuccessCallback.bind(this),
-      this.onError.bind(this));
+      this.errorHandler);
   }
   else {
     this.session.setReceiverMuted(true,
       this.mediaCommandSuccessCallback.bind(this),
-      this.onError.bind(this));
+      this.errorHandler);
   }
   this.updateMediaControlUI();
 };
@@ -724,7 +724,7 @@ CastPlayer.prototype.seekMedia = function(event) {
   request.currentTime = this.currentMediaTime;
   this.currentMediaSession.seek(request,
     this.onSeekSuccess.bind(this, 'media seek done'),
-    this.onError.bind(this));
+    this.errorHandler);
   this.castPlayerState = PLAYER_STATE.SEEKING;
 
   this.updateDisplayMessage();
@@ -991,16 +991,15 @@ CastPlayer.prototype.changeHandler = function(){
 };    
 
 /**
- * @param {function} A callback function for the fucntion to start timer 
  */
-CastPlayer.prototype.startProgressTimer = function(callback) {
+CastPlayer.prototype.startProgressTimer = function() {
   if( this.timer ) {
     clearInterval(this.timer);
     this.timer = null;
   }
 
   // start progress timer
-  this.timer = setInterval(callback.bind(this), this.timerStep);
+  this.timer = setInterval(this.incrementMediaTimeHandler, this.timerStep);
 };
 
 /**
