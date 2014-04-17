@@ -38,7 +38,7 @@ var DEVICE_STATE = {
   'IDLE' : 0, 
   'ACTIVE' : 1, 
   'WARNING' : 2, 
-  'ERROR' : 3,
+  'ERROR' : 3
 };
 
 /**
@@ -324,8 +324,8 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
     return;
   }
   console.log("loading..." + this.mediaContents[mediaIndex]['title']);
-  var mediaInfo = new chrome.cast.media.MediaInfo(this.mediaContents[mediaIndex]['sources'][0]);
-  mediaInfo.contentType = 'video/mp4';
+  var mediaInfo = new chrome.cast.media.MediaInfo(
+      this.mediaContents[mediaIndex]['sources'][0], 'video/mp4');
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
   request.autoplay = this.autoplay;
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
@@ -403,7 +403,7 @@ CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
   document.getElementById("duration").innerHTML = duration;
 
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
-    this.localPlayerState == PLAYER_STATE.STOPPED;
+    this.localPlayerState = PLAYER_STATE.STOPPED;
     var vi = document.getElementById('video_image')
     vi.style.display = 'block';
     this.localPlayer.style.display = 'none';
@@ -606,9 +606,10 @@ CastPlayer.prototype.stopMediaLocally = function() {
 
 /**
  * Set media volume in Cast mode
- * @param {Boolean} mute A boolean  
+ * @param {boolean} mute A boolean
+ * @param {Event} event
  */
-CastPlayer.prototype.setReceiverVolume = function(mute) {
+CastPlayer.prototype.setReceiverVolume = function(mute, event) {
   var p = document.getElementById("audio_bg_level"); 
   if( event.currentTarget.id == 'audio_bg_track' ) {
     var pos = 100 - parseInt(event.offsetY);
@@ -641,12 +642,12 @@ CastPlayer.prototype.setReceiverVolume = function(mute) {
 
   if( !mute ) {
     this.session.setReceiverVolumeLevel(this.currentVolume,
-      this.mediaCommandSuccessCallback.bind(this),
+      this.mediaCommandSuccessCallback.bind(this, "setReceiveVolumneLevel() succeeded"),
       this.errorHandler);
   }
   else {
     this.session.setReceiverMuted(true,
-      this.mediaCommandSuccessCallback.bind(this),
+      this.mediaCommandSuccessCallback.bind(this, "setReceiverMuted() succeeded"),
       this.errorHandler);
   }
   this.updateMediaControlUI();
@@ -654,14 +655,15 @@ CastPlayer.prototype.setReceiverVolume = function(mute) {
 
 /**
  * Mute media function in either Cast or local mode 
+ * @param {Event} event
  */
-CastPlayer.prototype.muteMedia = function() {
+CastPlayer.prototype.muteMedia = function(event) {
   if( this.audio == true ) {
     this.audio = false;
     document.getElementById('audio_on').style.display = 'none';
     document.getElementById('audio_off').style.display = 'block';
     if( this.currentMediaSession ) {
-      this.setReceiverVolume(true);
+      this.setReceiverVolume(true, event);
     }
     else {
       this.localPlayer.muted = true;
@@ -672,7 +674,7 @@ CastPlayer.prototype.muteMedia = function() {
     document.getElementById('audio_on').style.display = 'block';
     document.getElementById('audio_off').style.display = 'none';
     if( this.currentMediaSession ) {
-      this.setReceiverVolume(false);
+      this.setReceiverVolume(false, event);
     }
     else {
       this.localPlayer.muted = false;
@@ -684,7 +686,7 @@ CastPlayer.prototype.muteMedia = function() {
 
 /**
  * media seek function in either Cast or local mode
- * @param {Event} e An event object from seek 
+ * @param {Event} event An event object from seek
  */
 CastPlayer.prototype.seekMedia = function(event) {
   var pos = parseInt(event.offsetX);
@@ -743,10 +745,13 @@ CastPlayer.prototype.onSeekSuccess = function(info) {
 };
 
 /**
- * Callback function for media command success 
+ * Callback function for media command success
+ * @param {string} mediaCommandMessage
  */
-CastPlayer.prototype.mediaCommandSuccessCallback = function(info, e) {
-  console.log(info);
+CastPlayer.prototype.mediaCommandSuccessCallback = function(mediaCommandMessage) {
+  if (mediaCommandMessage) {
+    console.log(mediaCommandMessage);
+  }
 };
 
 /**
@@ -788,8 +793,9 @@ CastPlayer.prototype.updateProgressBarByTimer = function() {
   if( isNaN(parseInt(p.style.width)) ) {
     p.style.width = 0;
   } 
+  var pp = 0;
   if( this.currentMediaDuration > 0 ) {
-    var pp = Math.floor(PROGRESS_BAR_WIDTH * this.currentMediaTime/this.currentMediaDuration);
+    pp = Math.floor(PROGRESS_BAR_WIDTH * this.currentMediaTime/this.currentMediaDuration);
   }
     
   if( this.progressFlag ) { 
@@ -1004,7 +1010,7 @@ CastPlayer.prototype.startProgressTimer = function() {
 
 /**
  * Do AJAX call to load media json
- * @param {String} src A URL for media json.
+ * @param {string} src A URL for media json.
  */
 CastPlayer.prototype.retrieveMediaJSON = function(src) {
   var xhr = new XMLHttpRequest();
