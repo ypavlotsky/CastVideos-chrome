@@ -22,11 +22,6 @@
 var MEDIA_SOURCE_ROOT = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/';
 
 /**
- * Media source URL JSON
- **/
-var MEDIA_SOURCE_URL = 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/videos.json';
-
-/**
  * Width of progress bar in pixel
  **/
 var PROGRESS_BAR_WIDTH = 600;
@@ -1001,48 +996,6 @@ CastPlayer.prototype.startProgressTimer = function() {
   // start progress timer
   this.timer = setInterval(this.incrementMediaTimeHandler, this.timerStep);
 };
-
-/**
- * Do AJAX call to load media json
- * @param {String} src A URL for media json.
- */
-CastPlayer.prototype.retrieveMediaJSON = function(src) {
-  var xhr = new XMLHttpRequest();
-  xhr.addEventListener('load', this.onMediaJsonLoad.bind(this));
-  xhr.addEventListener('error', this.onMediaJsonError.bind(this));
-  xhr.open('GET', src);
-  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.responseType = "json";
-  xhr.send(null);
-};
-
-/**
- * Callback function for AJAX call on load success
- * @param {Object} evt An object returned from Ajax call
- */
-CastPlayer.prototype.onMediaJsonLoad = function(evt) {
-  var responseJson = evt.srcElement.response;
-  this.mediaContents = responseJson['categories'][0]['videos'];
-  var ni = document.getElementById('carousel');
-  var newdiv = null;
-  var divIdName = null;
-  for( var i = 0; i < this.mediaContents.length; i++ ) {
-    newdiv = document.createElement('div');
-    divIdName = 'thumb'+i+'Div';
-    newdiv.setAttribute('id',divIdName);
-    newdiv.setAttribute('class','thumb');
-    newdiv.innerHTML = '<img src="' + MEDIA_SOURCE_ROOT + this.mediaContents[i]['thumb'] + '" class="thumbnail">';
-    newdiv.addEventListener('click', this.selectMedia.bind(this, i));
-    ni.appendChild(newdiv);
-  }
-}
-
-/**
- * Callback function for AJAX call on load error
- */
-CastPlayer.prototype.onMediaJsonError = function() {
-  console.log("Failed to load media JSON");
-}
 
 /**
  * Add video thumbnails div's to UI for media JSON contents
