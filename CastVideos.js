@@ -939,7 +939,7 @@ CastPlayer.prototype.showVolumeSlider = function() {
 };
 
 /**
- * Hide the volume stlider
+ * Hide the volume slider
  */
 CastPlayer.prototype.hideVolumeSlider = function() {
   document.getElementById('audio_bg').style.opacity = 0;
