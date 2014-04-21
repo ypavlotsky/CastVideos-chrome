@@ -243,7 +243,7 @@ CastPlayer.prototype.selectMedia = function(mediaIndex) {
   pi.style.marginLeft = -21 - PROGRESS_BAR_WIDTH + 'px';
 
   if( !this.currentMediaSession ) {
-    if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
+    if( this.localPlayerState == PLAYER_STATE.PLAYING || this.localPlayerState == PLAYER_STATE.PAUSED ) {
       this.localPlayerState = PLAYER_STATE.IDLE;
       this.playMediaLocally(0);
     }
