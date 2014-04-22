@@ -356,6 +356,29 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
 
 };
 
+
+/**
+ * @param {number} duration
+ * @return {!string}
+ */
+CastPlayer.getDurationString = function(duration) {
+  var durationString = '';
+  var hr = Math.floor(duration / 3600);
+  if (hr > 0) {
+    durationString += hr + ':';
+  }
+  duration %= 3600;
+  var min = Math.floor(duration / 60);
+  if (min > 0) {
+    durationString += min + ':';
+  }
+  duration %= 60;
+  var sec = Math.floor(duration);
+  durationString += sec;
+  return durationString;
+};
+
+
 /**
  * Callback function for loadMedia success
  * @param {Object} mediaSession A new media object.
@@ -384,23 +407,8 @@ CastPlayer.prototype.onMediaDiscovered = function(how, mediaSession) {
   this.currentMediaSession.addUpdateListener(this.mediaStatusUpdateHandler);
 
   this.currentMediaDuration = this.currentMediaSession.media.duration;
-  var duration = this.currentMediaDuration;
-  var hr = parseInt(duration/3600);
-  duration -= hr * 3600;
-  var min = parseInt(duration/60);
-  var sec = parseInt(duration % 60);
-  if ( hr > 0 ) {
-    duration = hr + ":" + min + ":" + sec;
-  }
-  else {
-    if( min > 0 ) {
-      duration = min + ":" + sec;
-    }
-    else {
-      duration = sec;
-    }
-  }
-  document.getElementById("duration").innerHTML = duration;
+  document.getElementById("duration").innerHTML =
+      CastPlayer.getDurationString(this.currentMediaDuration);
 
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
     this.localPlayerState = PLAYER_STATE.STOPPED;
@@ -484,24 +492,8 @@ CastPlayer.prototype.playMediaLocally = function(currentTime) {
  */
 CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
   this.currentMediaDuration = this.localPlayer.duration;
-  var duration = this.currentMediaDuration;
-      
-  var hr = parseInt(duration/3600);
-  duration -= hr * 3600;
-  var min = parseInt(duration/60);
-  var sec = parseInt(duration % 60);
-  if ( hr > 0 ) {
-    duration = hr + ":" + min + ":" + sec;
-  }
-  else {
-    if( min > 0 ) {
-      duration = min + ":" + sec;
-    }
-    else {
-      duration = sec;
-    }
-  }
-  document.getElementById("duration").innerHTML = duration;
+  document.getElementById('duration').innerHTML =
+     CastPlayer.getDurationString(this.currentMediaDuration);
   this.localPlayer.currentTime= currentTime;
   this.localPlayer.play();
   // start progress timer
@@ -612,10 +604,10 @@ CastPlayer.prototype.stopMediaLocally = function() {
 CastPlayer.prototype.setReceiverVolume = function(mute, event) {
   var p = document.getElementById("audio_bg_level"); 
   if( event.currentTarget.id == 'audio_bg_track' ) {
-    var pos = 100 - parseInt(event.offsetY);
+    var pos = 100 - event.offsetY;
   }
   else {
-    var pos = parseInt(p.clientHeight) - parseInt(event.offsetY);
+    var pos = p.clientHeight - event.offsetY;
   }
   if( !this.currentMediaSession ) {
       this.localPlayer.volume = pos < 100 ? pos/100 : 1;
@@ -689,16 +681,16 @@ CastPlayer.prototype.muteMedia = function(event) {
  * @param {Event} event An event object from seek
  */
 CastPlayer.prototype.seekMedia = function(event) {
-  var pos = parseInt(event.offsetX);
+  var pos = event.offsetX;
   var pi = document.getElementById("progress_indicator"); 
   var p = document.getElementById("progress"); 
   if( event.currentTarget.id == 'progress_indicator' ) {
-    var curr = parseInt(this.currentMediaTime + this.currentMediaDuration * pos / PROGRESS_BAR_WIDTH);
-    var pp = parseInt(pi.style.marginLeft) + pos;
-    var pw = parseInt(p.style.width) + pos;
+    var curr = this.currentMediaTime + this.currentMediaDuration * pos / PROGRESS_BAR_WIDTH;
+    var pp = parseInt(pi.style.marginLeft, 10) + pos;
+    var pw = parseInt(p.style.width, 10) + pos;
   }
   else {
-    var curr = parseInt(pos * this.currentMediaDuration / PROGRESS_BAR_WIDTH);
+    var curr = pos * this.currentMediaDuration / PROGRESS_BAR_WIDTH;
     var pp = pos -21 - PROGRESS_BAR_WIDTH;
     var pw = pos;
   }
@@ -790,7 +782,7 @@ CastPlayer.prototype.setProgressFlag = function() {
  */
 CastPlayer.prototype.updateProgressBarByTimer = function() {
   var p = document.getElementById("progress"); 
-  if( isNaN(parseInt(p.style.width)) ) {
+  if( isNaN(parseInt(p.style.width, 10)) ) {
     p.style.width = 0;
   } 
   var pp = 0;
@@ -960,7 +952,8 @@ CastPlayer.prototype.hideVolumeSlider = function() {
 CastPlayer.prototype.requestFullScreen = function() {
   // Supports most browsers and their versions.
   var element = document.getElementById("video_element");
-  var requestMethod = element.requestFullScreen || element.webkitRequestFullScreen;
+  var requestMethod = element.requestFullScreen ?
+      element.requestFullScreen : element.webkitRequestFullScreen;
 
   if (requestMethod) { // Native full screen.
     requestMethod.call(element);
@@ -973,7 +966,8 @@ CastPlayer.prototype.requestFullScreen = function() {
  */
 CastPlayer.prototype.cancelFullScreen = function() {
   // Supports most browsers and their versions.
-  var requestMethod = document.cancelFullScreen || document.webkitCancelFullScreen;
+  var requestMethod = document.cancelFullScreen ?
+      document.cancelFullScreen : document.webkitCancelFullScreen;
 
   if (requestMethod) { 
     requestMethod.call(document);
