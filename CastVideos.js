@@ -267,14 +267,14 @@ CastPlayer.prototype.sessionListener = function(session) {
 /**
  * This indicates availability of receivers but
  * does not provide a list of device IDs
- * @param {string} e Receiver availability
+ * @param {!chrome.cast.ReceiverAvailability} receiverAvailability
  */
-CastPlayer.prototype.receiverListener = function(e) {
-  if (e === 'available') {
-    console.log('receiver found');
+CastPlayer.prototype.receiverListener = function(receiverAvailability) {
+  if (receiverAvailability === chrome.cast.ReceiverAvailability.AVAILABLE) {
+    console.log('Receiver was found');
   }
   else {
-    console.log('receiver list empty');
+    console.log('No receiver was found');
   }
 };
 
