@@ -278,35 +278,13 @@ CastPlayer.prototype.onRequestSessionSuccess = function(e) {
 
 /**
  * Callback function for launch error
+ * @param {Object} e A chrome.cast.Error object
  */
-CastPlayer.prototype.onLaunchError = function() {
-  console.log("launch error");
-  this.deviceState = DEVICE_STATE.ERROR;
-};
-
-/**
- * Stops the running receiver application associated with the session.
- */
-CastPlayer.prototype.stopApp = function() {
-  this.session.stop(this.onStopAppSuccess.bind(this, 'Session stopped'),
-      this.errorHandler);
-};
-
-/**
- * Callback function for stop app success
- */
-CastPlayer.prototype.onStopAppSuccess = function(message) {
-  console.log(message);
-  this.deviceState = DEVICE_STATE.IDLE;
-  this.castPlayerState = PLAYER_STATE.IDLE;
-  this.currentMediaSession = null;
-  clearInterval(this.timer);
-  this.updateDisplayMessage();
-
-  // continue to play media locally
-  console.log("current time: " + this.currentMediaTime);
-  this.playMediaLocally(this.currentMediaTime);
-  this.updateMediaControlUI();
+CastPlayer.prototype.onLaunchError = function(e) {
+  if (e.code != chrome.cast.ErrorCode.CANCEL) {
+    console.log("launch error");
+    this.deviceState = DEVICE_STATE.ERROR;
+  }
 };
 
 /**
@@ -569,7 +547,7 @@ CastPlayer.prototype.pauseMediaLocally = function() {
 };
 
 /**
- * Stop meia playback in either Cast or local mode
+ * Stop media playback in either Cast or local mode
  */
 CastPlayer.prototype.stopMedia = function() {
   if( !this.currentMediaSession ) {
@@ -881,7 +859,7 @@ CastPlayer.prototype.initializeUI = function() {
 
   // add event handlers to UI components
   document.getElementById("casticonidle").addEventListener('click', this.launchApp.bind(this));
-  document.getElementById("casticonactive").addEventListener('click', this.stopApp.bind(this));
+  document.getElementById("casticonactive").addEventListener('click', this.launchApp.bind(this));
   document.getElementById("progress_bg").addEventListener('click', this.seekMedia.bind(this));
   document.getElementById("progress").addEventListener('click', this.seekMedia.bind(this));
   document.getElementById("progress_indicator").addEventListener('dragend', this.seekMedia.bind(this));
