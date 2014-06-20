@@ -209,9 +209,9 @@ CastPlayer.prototype.initializeCastPlayer = function() {
     setTimeout(this.initializeCastPlayer.bind(this), 1000);
     return;
   }
-  // default set to the default media receiver app ID
+  // default set to the CastVideos media receiver app ID
   // optional: you may change it to point to your own
-  var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
+  var applicationID = '4F8B3483';
 
   // request session
   var sessionRequest = new chrome.cast.SessionRequest(applicationID);
