@@ -72,6 +72,10 @@ var CastPlayer = function() {
   // @type {DEVICE_STATE} A state for device
   this.deviceState = DEVICE_STATE.IDLE;
 
+  /* receivers available */
+  // @type {boolean} A boolean to indicate availability of receivers
+  this.receivers_available = false;
+
   /* Cast player variables */
   // @type {Object} a chrome.cast.media.Media object
   this.currentMediaSession = null;
@@ -138,11 +142,17 @@ CastPlayer.prototype.initializeCastPlayer = function() {
   // optional: you may change it to point to your own
   var applicationID = chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID;
 
+  // auto join policy can be one of the following three
+  var autoJoinPolicy = chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED;
+  //var autoJoinPolicy = chrome.cast.AutoJoinPolicy.PAGE_SCOPED;
+  //var autoJoinPolicy = chrome.cast.AutoJoinPolicy.TAB_AND_ORIGIN_SCOPED;
+
   // request session
   var sessionRequest = new chrome.cast.SessionRequest(applicationID);
   var apiConfig = new chrome.cast.ApiConfig(sessionRequest,
     this.sessionListener.bind(this),
-    this.receiverListener.bind(this));
+    this.receiverListener.bind(this),
+    autoJoinPolicy);
 
   chrome.cast.initialize(apiConfig, this.onInitSuccess.bind(this), this.onError.bind(this));
 
@@ -193,6 +203,8 @@ CastPlayer.prototype.sessionListener = function(e) {
  */
 CastPlayer.prototype.receiverListener = function(e) {
   if( e === 'available' ) {
+    this.receivers_available = true;
+    this.updateMediaControlUI();
     console.log("receiver found");
   }
   else {
@@ -833,6 +845,12 @@ CastPlayer.prototype.updateDisplayMessage = function() {
  * Update media control UI components based on localPlayerState or castPlayerState
  */
 CastPlayer.prototype.updateMediaControlUI = function() {
+  if( !this.receivers_available ) {
+    document.getElementById("casticonactive").style.display = 'none';
+    document.getElementById("casticonidle").style.display = 'none';
+    return; 
+  }
+
   if( this.deviceState == DEVICE_STATE.ACTIVE ) {
     document.getElementById("casticonactive").style.display = 'block';
     document.getElementById("casticonidle").style.display = 'none';
