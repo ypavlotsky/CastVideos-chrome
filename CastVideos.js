@@ -270,7 +270,9 @@ CastPlayer.prototype.selectMedia = function(mediaIndex) {
  */
 CastPlayer.prototype.launchApp = function() {
   console.log("launching app...");
-  chrome.cast.requestSession(this.onRequestSessionSuccess.bind(this), this.onLaunchError.bind(this));
+  chrome.cast.requestSession(
+    this.sessionListener.bind(this),
+    this.onLaunchError.bind(this));
   if( this.timer ) {
     clearInterval(this.timer);
   }
