@@ -340,7 +340,14 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
   }
   console.log("loading..." + this.mediaContents[mediaIndex]['title']);
   var mediaInfo = new chrome.cast.media.MediaInfo(this.mediaContents[mediaIndex]['sources'][0]);
+
+  mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+  mediaInfo.metadata.metadataType = chrome.cast.media.MetadataType.GENERIC;
   mediaInfo.contentType = 'video/mp4';
+
+  mediaInfo.metadata.title = this.mediaContents[mediaIndex]['title'];
+  mediaInfo.metadata.images = [{'url': MEDIA_SOURCE_ROOT + this.mediaContents[mediaIndex]['thumb']}];
+
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
   request.autoplay = this.autoplay;
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
@@ -350,16 +357,6 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
   else {
     request.currentTime = 0;
   } 
-  var payload = {
-    "title:" : this.mediaContents[0]['title'],
-    "thumb" : this.mediaContents[0]['thumb']
-  };
-
-  var json = {
-    "payload" : payload
-  };
-
-  request.customData = json;
 
   this.castPlayerState = PLAYER_STATE.LOADING;
   this.session.loadMedia(request,
