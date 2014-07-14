@@ -769,18 +769,17 @@ CastPlayer.prototype.mediaCommandSuccessCallback = function(info, e) {
 CastPlayer.prototype.updateProgressBar = function(e) {
   var p = document.getElementById("progress"); 
   var pi = document.getElementById("progress_indicator"); 
-  if( e.idleReason == 'FINISHED' && e.playerState == 'IDLE' ) {
+  if( e == false ) {
     p.style.width = '0px';
     pi.style.marginLeft = -21 - PROGRESS_BAR_WIDTH + 'px';
     clearInterval(this.timer);
     this.castPlayerState = PLAYER_STATE.STOPPED;
     this.updateDisplayMessage();
-  }
-  else {
-    p.style.width = Math.ceil(PROGRESS_BAR_WIDTH * e.currentTime / this.currentMediaSession.media.duration + 1) + 'px';
+  } else {
+    p.style.width = Math.ceil(PROGRESS_BAR_WIDTH * this.currentMediaSession.currentTime / this.currentMediaSession.media.duration + 1) + 'px';
     this.progressFlag = false; 
     setTimeout(this.setProgressFlag.bind(this),1000); // don't update progress in 1 second
-    var pp = Math.ceil(PROGRESS_BAR_WIDTH * e.currentTime / this.currentMediaSession.media.duration);
+    var pp = Math.ceil(PROGRESS_BAR_WIDTH * this.currentMediaSession.currentTime / this.currentMediaSession.media.duration);
     pi.style.marginLeft = -21 - PROGRESS_BAR_WIDTH + pp + 'px';
   }
 };
@@ -1138,6 +1137,7 @@ var mediaJSON = { "categories" : [ { "name" : "Movies",
               "title" : "Sintel"
             },
 			{ "description" : "Smoking Tire takes the all-new Subaru Outback to the highest point we can find in hopes our customer-appreciation Balloon Launch will get some free T-shirts into the hands of our viewers.",
+              "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4" ],
               "subtitle" : "By Garage419",
               "thumb" : "images/SubaruOutbackOnStreetAndDirt.jpg",
               "title" : "Subaru Outback On Street And Dirt"
