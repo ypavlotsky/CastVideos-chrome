@@ -339,6 +339,7 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
   request.autoplay = this.autoplay;
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
     request.currentTime = this.localPlayer.currentTime;
+    this.localPlayer.pause();
   }
   else {
     request.currentTime = 0;
