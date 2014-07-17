@@ -189,11 +189,25 @@ CastPlayer.prototype.sessionListener = function(e) {
     this.deviceState = DEVICE_STATE.ACTIVE;
     if( this.session.media[0] ) {
       this.onMediaDiscovered('activeSession', this.session.media[0]);
+      this.syncCurrentMedia(this.session.media[0].media.contentId);
+      this.selectMediaUpdateUI(this.currentMediaIndex);
+      this.updateDisplayMessage();
     }
     else {
       this.loadMedia(this.currentMediaIndex);
     }
     this.session.addUpdateListener(this.sessionUpdateListener.bind(this));
+  }
+}
+
+/**
+ * @param {string} currentMediaURL
+ */
+CastPlayer.prototype.syncCurrentMedia = function(currentMediaURL) {
+  for(var i=0; i < this.mediaContents.length; i++) {
+    if( currentMediaURL == this.mediaContents[i]['sources'][0] ) {
+      this.currentMediaIndex = i;
+    }
   }
 }
 
@@ -839,8 +853,9 @@ CastPlayer.prototype.updateDisplayMessage = function() {
     document.getElementById("playerstatebg").style.display = 'block';
     document.getElementById("video_image_overlay").style.display = 'block';
     //document.getElementById("media_control").style.opacity = 0.5;
-    document.getElementById("playerstate").innerHTML = this.castPlayerState
-      + " on " + this.session.receiver.friendlyName;
+    document.getElementById("playerstate").innerHTML = 
+      this.mediaContents[this.currentMediaIndex]['title'] + " "
+      + this.castPlayerState + " on " + this.session.receiver.friendlyName;
   }
 }
 
