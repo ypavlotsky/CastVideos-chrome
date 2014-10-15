@@ -293,7 +293,7 @@ body {
   width: 32px;
   height: 32px;
   margin:10px 17px 14px 0px;
-  display:block; 
+  display:none; 
   background-image:url('../imagefiles/ic_media_route_off_custom.png');
 }
 
