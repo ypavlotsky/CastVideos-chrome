@@ -873,11 +873,13 @@ CastPlayer.prototype.updateMediaControlUI = function() {
   if( this.deviceState == DEVICE_STATE.ACTIVE ) {
     document.getElementById("casticonactive").style.display = 'block';
     document.getElementById("casticonidle").style.display = 'none';
+    this.hideFullscreenButton();
     var playerState = this.castPlayerState;
   }
   else {
     document.getElementById("casticonidle").style.display = 'block';
     document.getElementById("casticonactive").style.display = 'none';
+    this.showFullscreenButton();
     var playerState = this.localPlayerState;
   }
 
@@ -976,7 +978,7 @@ CastPlayer.prototype.showVolumeSlider = function() {
 };    
 
 /**
- * Hide the volume stlider 
+ * Hide the volume slider 
  */
 CastPlayer.prototype.hideVolumeSlider = function() {
   document.getElementById('audio_bg').style.opacity = 0;
@@ -1014,21 +1016,40 @@ CastPlayer.prototype.cancelFullScreen = function() {
 /**
  * Exit fullscreen mode by escape 
  */
-CastPlayer.prototype.changeHandler = function(){                                           
-  if (this.fullscreen) { 
-    document.getElementById('fullscreen_expand').style.display = 'block';
-    document.getElementById('fullscreen_collapse').style.display = 'none';
-    this.fullscreen = false;
+CastPlayer.prototype.changeHandler = function(){
+  this.fullscreen = !this.fullscreen;
+  if (this.deviceState == DEVICE_STATE.ACTIVE) {
+    this.hideFullscreenButton();
   }
   else {
-    document.getElementById('fullscreen_expand').style.display = 'none';
-    document.getElementById('fullscreen_collapse').style.display = 'block';
-    this.fullscreen = true;
+    this.showFullscreenButton();
   }
-};    
+};
 
 /**
- * @param {function} A callback function for the fucntion to start timer 
+ * Show expand/collapse fullscreen button
+ */
+CastPlayer.prototype.showFullscreenButton = function(){
+  if (this.fullscreen) {
+    document.getElementById('fullscreen_expand').style.display = 'none';
+    document.getElementById('fullscreen_collapse').style.display = 'block';
+  }
+  else {
+    document.getElementById('fullscreen_expand').style.display = 'block';
+    document.getElementById('fullscreen_collapse').style.display = 'none';
+  }
+};
+
+/**
+ * Hide expand/collapse fullscreen button
+ */
+CastPlayer.prototype.hideFullscreenButton = function(){
+  document.getElementById('fullscreen_expand').style.display = 'none';
+  document.getElementById('fullscreen_collapse').style.display = 'none';
+};
+
+/**
+ * @param {function} A callback function for the function to start timer 
  */
 CastPlayer.prototype.startProgressTimer = function(callback) {
   if( this.timer ) {
