@@ -533,7 +533,7 @@ CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
     }
   }
   document.getElementById("duration").innerHTML = duration;
-  this.localPlayer.currentTime= currentTime;
+  this.localPlayer.currentTime = currentTime;
   this.localPlayer.play();
   // start progress timer
   this.startProgressTimer(this.incrementMediaTime);
@@ -605,7 +605,7 @@ CastPlayer.prototype.pauseMediaLocally = function() {
 };
 
 /**
- * Stop meia playback in either Cast or local mode  
+ * Stop media playback in either Cast or local mode  
  */
 CastPlayer.prototype.stopMedia = function() {
   if( !this.currentMediaSession ) {
@@ -847,13 +847,11 @@ CastPlayer.prototype.updateDisplayMessage = function() {
     document.getElementById("playerstatebg").style.display = 'none';
     document.getElementById("play").style.display = 'block';
     document.getElementById("video_image_overlay").style.display = 'none';
-    //document.getElementById("media_control").style.opacity = 0.0;
   }
   else {
     document.getElementById("playerstate").style.display = 'block';
     document.getElementById("playerstatebg").style.display = 'block';
     document.getElementById("video_image_overlay").style.display = 'block';
-    //document.getElementById("media_control").style.opacity = 0.5;
     document.getElementById("playerstate").innerHTML = 
       this.mediaContents[this.currentMediaIndex]['title'] + " "
       + this.castPlayerState + " on " + this.session.receiver.friendlyName;
@@ -864,26 +862,8 @@ CastPlayer.prototype.updateDisplayMessage = function() {
  * Update media control UI components based on localPlayerState or castPlayerState
  */
 CastPlayer.prototype.updateMediaControlUI = function() {
-  if( !this.receivers_available ) {
-    document.getElementById("casticonactive").style.display = 'none';
-    document.getElementById("casticonidle").style.display = 'none';
-    return; 
-  }
-
-  if( this.deviceState == DEVICE_STATE.ACTIVE ) {
-    document.getElementById("casticonactive").style.display = 'block';
-    document.getElementById("casticonidle").style.display = 'none';
-    this.hideFullscreenButton();
-    var playerState = this.castPlayerState;
-  }
-  else {
-    document.getElementById("casticonidle").style.display = 'block';
-    document.getElementById("casticonactive").style.display = 'none';
-    this.showFullscreenButton();
-    var playerState = this.localPlayerState;
-  }
-
-  switch( playerState ) 
+  var playerState = this.deviceState == DEVICE_STATE.ACTIVE ? this.castPlayerState : this.localPlayerState;
+  switch ( playerState )
   {
     case PLAYER_STATE.LOADED:
     case PLAYER_STATE.PLAYING:
@@ -899,6 +879,23 @@ CastPlayer.prototype.updateMediaControlUI = function() {
       break;
     default:
       break;
+  }
+
+  if( !this.receivers_available ) {
+    document.getElementById("casticonactive").style.display = 'none';
+    document.getElementById("casticonidle").style.display = 'none';
+    return;
+  }
+
+  if( this.deviceState == DEVICE_STATE.ACTIVE ) {
+    document.getElementById("casticonactive").style.display = 'block';
+    document.getElementById("casticonidle").style.display = 'none';
+    this.hideFullscreenButton();
+  }
+  else {
+    document.getElementById("casticonidle").style.display = 'block';
+    document.getElementById("casticonactive").style.display = 'none';
+    this.showFullscreenButton();
   }
 }
 
@@ -998,7 +995,7 @@ CastPlayer.prototype.requestFullScreen = function() {
   if (requestMethod) { // Native full screen.
     requestMethod.call(element);
     console.log("requested fullscreen");
-  } 
+  }
 };
 
 /**
