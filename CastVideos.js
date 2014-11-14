@@ -123,7 +123,8 @@ var CastPlayer = function() {
  * Initialize local media player 
  */
 CastPlayer.prototype.initializeLocalPlayer = function() {
-  this.localPlayer = document.getElementById('video_element')
+  this.localPlayer = document.getElementById('video_element');
+  this.localPlayer.addEventListener('loadeddata', this.onMediaLoadedLocally.bind(this));
 };
 
 /**
@@ -243,7 +244,7 @@ CastPlayer.prototype.sessionUpdateListener = function(isAlive) {
     if( online == true ) {
       // continue to play media locally
       console.log("current time: " + this.currentMediaTime);
-      this.playMediaLocally(this.currentMediaTime);
+      this.playMediaLocally();
       this.updateMediaControlUI();
     }
   }
@@ -271,12 +272,12 @@ CastPlayer.prototype.selectMedia = function(mediaIndex) {
   if( !this.currentMediaSession ) {
     if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
       this.localPlayerState = PLAYER_STATE.IDLE; 
-      this.playMediaLocally(0); 
+      this.playMediaLocally();
     }
   }
   else {
     this.castPlayerState = PLAYER_STATE.IDLE; 
-    this.playMedia(); 
+    this.playMedia();
   }
   this.selectMediaUpdateUI(mediaIndex);
 };
@@ -339,7 +340,7 @@ CastPlayer.prototype.onStopAppSuccess = function(message) {
 
   // continue to play media locally
   console.log("current time: " + this.currentMediaTime);
-  this.playMediaLocally(this.currentMediaTime);
+  this.playMediaLocally();
   this.updateMediaControlUI();
 };
 
@@ -489,16 +490,14 @@ CastPlayer.prototype.incrementMediaTime = function() {
 
 /**
  * Play media in local player
- * @param {Number} currentTime A number for media current position 
  */
-CastPlayer.prototype.playMediaLocally = function(currentTime) {
+CastPlayer.prototype.playMediaLocally = function() {
   var vi = document.getElementById('video_image')
   vi.style.display = 'none';
   this.localPlayer.style.display = 'block';
   if( this.localPlayerState != PLAYER_STATE.PLAYING && this.localPlayerState != PLAYER_STATE.PAUSED ) { 
     this.localPlayer.src = this.mediaContents[this.currentMediaIndex]['sources'][0];
     this.localPlayer.load();
-    this.localPlayer.addEventListener('loadeddata', this.onMediaLoadedLocally.bind(this, currentTime));
   }
   else {
     this.localPlayer.play();
@@ -511,9 +510,8 @@ CastPlayer.prototype.playMediaLocally = function(currentTime) {
 
 /**
  * Callback when media is loaded in local player 
- * @param {Number} currentTime A number for media current position 
  */
-CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
+CastPlayer.prototype.onMediaLoadedLocally = function() {
   this.currentMediaDuration = this.localPlayer.duration;
   var duration = this.currentMediaDuration;
       
@@ -533,7 +531,8 @@ CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
     }
   }
   document.getElementById("duration").innerHTML = duration;
-  this.localPlayer.currentTime = currentTime;
+  this.localPlayer.currentTime = this.currentMediaTime;
+
   this.localPlayer.play();
   // start progress timer
   this.startProgressTimer(this.incrementMediaTime);
@@ -544,7 +543,7 @@ CastPlayer.prototype.onMediaLoadedLocally = function(currentTime) {
  */
 CastPlayer.prototype.playMedia = function() {
   if( !this.currentMediaSession ) {
-    this.playMediaLocally(0);
+    this.playMediaLocally();
     return;
   }
 
@@ -1143,7 +1142,7 @@ var mediaJSON = { "categories" : [ { "name" : "Movies",
               "thumb" : "images/ForBiggerBlazes.jpg",
               "title" : "For Bigger Blazes"
             },
-            { "description" : "Introducing Chromecast. The easiest way to enjoy online video and music on your TV—for when Batman's escapes aren't quite big enough. For $35. Learn how to use Chromecast with Google Play Movies and more at google.com/chromecast.",
+            { "description" : "Introducing Chromecast. The easiest way to enjoy online video and music on your TV. For when Batman's escapes aren't quite big enough. For $35. Learn how to use Chromecast with Google Play Movies and more at google.com/chromecast.",
               "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4" ],
               "subtitle" : "By Google",
               "thumb" : "images/ForBiggerEscapes.jpg",
@@ -1155,13 +1154,13 @@ var mediaJSON = { "categories" : [ { "name" : "Movies",
               "thumb" : "images/ForBiggerFun.jpg",
               "title" : "For Bigger Fun"
             },
-            { "description" : "Introducing Chromecast. The easiest way to enjoy online video and music on your TV—for the times that call for bigger joyrides. For $35. Learn how to use Chromecast with YouTube and more at google.com/chromecast.",
+            { "description" : "Introducing Chromecast. The easiest way to enjoy online video and music on your TV. For the times that call for bigger joyrides. For $35. Learn how to use Chromecast with YouTube and more at google.com/chromecast.",
               "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4" ],
               "subtitle" : "By Google",
               "thumb" : "images/ForBiggerJoyrides.jpg",
               "title" : "For Bigger Joyrides"
             },
-            { "description" :"Introducing Chromecast. The easiest way to enjoy online video and music on your TV—for when you want to make Buster's big meltdowns even bigger. For $35. Learn how to use Chromecast with Netflix and more at google.com/chromecast.", 
+            { "description" :"Introducing Chromecast. The easiest way to enjoy online video and music on your TV. For when you want to make Buster's big meltdowns even bigger. For $35. Learn how to use Chromecast with Netflix and more at google.com/chromecast.", 
               "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4" ],
               "subtitle" : "By Google",
               "thumb" : "images/ForBiggerMeltdowns.jpg",
@@ -1197,7 +1196,7 @@ var mediaJSON = { "categories" : [ { "name" : "Movies",
               "thumb" : "images/WeAreGoingOnBullrun.jpg",
               "title" : "We Are Going On Bullrun"
             },
-			{ "description" : "The Smoking Tire meets up with Chris and Jorge from CarsForAGrand.com to see just how far $1,000 can go when looking for a car.The Smoking Tire meets up with Chris and Jorge from CarsForAGrand.com to see just how far $1,000 can go when looking for a car.",
+			{ "description" : "The Smoking Tire meets up with Chris and Jorge from CarsForAGrand.com to see just how far $1,000 can go when looking for a car. The Smoking Tire meets up with Chris and Jorge from CarsForAGrand.com to see just how far $1,000 can go when looking for a car.",
               "sources" : [ "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4" ],
               "subtitle" : "By Garage419",
               "thumb" : "images/WhatCarCanYouGetForAGrand.jpg",
